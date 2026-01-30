@@ -36,7 +36,7 @@ class PrinterIntelliMacro:
         
         self.gcode = self.printer.lookup_object('gcode')
         self.gcode.register_command(
-            self.name,
+            self.name.upper(),
             self.cmd_EXECUTE,
             desc=self.desc
         )
