@@ -24,6 +24,27 @@ class GCodeCommandWrapper:
     def __getattr__(self, name):
         return self._gcmd.get(name)
 
+class PrinterWrapper:
+    def __init__(self, printer):
+        self._printer = printer
+    
+    def __getattr__(self, name):
+        return PrinterObjectWrapper(self._printer.lookup_object(name, None))
+
+class PrinterObjectWrapper:
+    def __init__(self, obj):
+        self._obj = obj
+    
+    def __getattr__(self, name):
+        if isinstance(self._obj, dict):
+            res = self._obj.get(name, None)
+        elif hasattr(self._obj, 'get_status'):
+            res = self._obj.get_status(0).get(name, None)
+        return PrinterObjectWrapper(res) if isinstance(res, dict) else res
+    
+    def __str__(self):
+        return str(self._obj if isinstance(self._obj, dict) else self._obj.get_status(0))
+
 class PrinterIntelliMacro:
     def __init__(self, config):
         self.config = config
@@ -46,10 +67,10 @@ class PrinterIntelliMacro:
             exec(
                 self.script,
                 {
-                    'printer': self.printer,
+                    'printer': PrinterWrapper(self.printer),
                     'params': GCodeCommandWrapper(gcmd),
                     'cmd': GCodeCommandInline(self.gcode),
-                    'respond': lambda msg: gcmd.respond_info(str(msg))
+                    'respond': lambda msg: gcmd.respond_info(str(msg)),
                 }
             )
         except Exception as err:
