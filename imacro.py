@@ -4,6 +4,11 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
+import traceback
+from html import escape
+from pathlib import Path
+from textwrap import indent
+
 class GCodeCommandInline:
     def __init__(self, gcode):
         self._gcode = gcode
@@ -45,15 +50,28 @@ class PrinterObjectWrapper:
     def __str__(self):
         return str(self._obj if isinstance(self._obj, dict) else self._obj.get_status(0))
 
-class PrinterIntelliMacro:
+class iMacro:
     def __init__(self, config):
         self.config = config
         self.full_name = self.config.get_name()
         self.name = self.full_name.split()[1]
         self.printer = config.get_printer()
         
-        self.script = config.get('script')
-        self.desc = config.get('description', default='Intelli-G-Code Macro')
+        self.script = config.get('script', None)
+        
+        if self.script is None:
+            self.use_file = True
+            self.path = self.relative_path = config.get('path')
+            self.is_abs_path = config.getboolean('absolute_path', False)
+            
+            if not self.is_abs_path:
+                printer_cfg_path = Path(self.printer.start_args['config_file'])
+                config_path = printer_cfg_path.parent
+                self.path = str(config_path / self.path)
+        else:
+            self.use_file = False
+        
+        self.desc = config.get('description', default='iMacro')
         
         self.gcode = self.printer.lookup_object('gcode')
         self.gcode.register_command(
@@ -64,17 +82,27 @@ class PrinterIntelliMacro:
     
     def cmd_EXECUTE(self, gcmd):
         try:
+            if self.use_file:
+                with open(self.path, 'r') as fp:
+                    script = fp.read()
+            else:
+                script = self.script
+            
+            # Add filename for tracebacks
+            compiled = compile(script, self.relative_path if self.use_file else f'iMacro {self.name}', 'exec')
             exec(
-                self.script,
+                compiled,
                 {
                     'printer': PrinterWrapper(self.printer),
                     'params': GCodeCommandWrapper(gcmd),
                     'cmd': GCodeCommandInline(self.gcode),
-                    'respond': lambda msg: gcmd.respond_info(str(msg)),
+                    'respond': lambda msg, unsafe=False: gcmd.respond_info(str(msg)) if unsafe else gcmd.respond_info(escape(str(msg))),
                 }
             )
         except Exception as err:
-            gcmd.respond_raw(f'!! {err}')
+            gcmd.respond_raw(indent(''.join(traceback.format_exception_only(err)), '!! '))
+            if isinstance(err, IndentationError) and not self.use_file:
+                gcmd.respond_info(f'<span style="color:yellow;">If you are experiencing syntax errors related to indentation, it is recommended to switch to file-based iMacros.</span>')
 
 def load_config_prefix(config):
-    return PrinterIntelliMacro(config)
+    return iMacro(config)
