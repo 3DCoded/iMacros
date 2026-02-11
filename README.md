@@ -16,7 +16,7 @@ Run the following commands in SSH:
 cd ~
 git clone https://github.com/3DCoded/iMacros
 cd iMacros
-ln -f imacros.py ~/klipper/klippy/extras/imacros.py
+ln -f imacro.py ~/klipper/klippy/extras/imacro.py
 sudo service klipper restart
 ```
 
