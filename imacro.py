@@ -27,7 +27,7 @@ class GCodeCommandWrapper:
         self._gcmd = gcmd
         
     def __getattr__(self, name):
-        return self._gcmd.get(name)
+        return self._gcmd.get(name, default=None)
 
 class PrinterWrapper:
     def __init__(self, printer):
@@ -95,6 +95,7 @@ class iMacro:
                 {
                     'printer': PrinterWrapper(self.printer),
                     'params': GCodeCommandWrapper(gcmd),
+                    'rawparams': gcmd.get_raw_command_parameters(),
                     'cmd': GCodeCommandInline(self.gcode),
                     'respond': lambda msg, unsafe=False: gcmd.respond_info(str(msg)) if unsafe else gcmd.respond_info(escape(str(msg))),
                 }
