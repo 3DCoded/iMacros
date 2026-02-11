@@ -1,4 +1,4 @@
-# Intelligent G-Code Macros
+# Interpreted G-Code Macros
 #
 # Copyright (C) 2026 Christopher Mattar (3dcoded) <info3dcoded@gmail.com>
 #

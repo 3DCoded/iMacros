@@ -1,1 +1,3 @@
-# Klipper IntelliMacros
+# Klipper iMacros
+
+## Flexible Interpreted Macros
