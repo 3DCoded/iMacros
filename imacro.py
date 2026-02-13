@@ -5,6 +5,7 @@
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
 import traceback
+import logging
 from html import escape
 from pathlib import Path
 from textwrap import indent
@@ -101,6 +102,7 @@ class iMacro:
                 }
             )
         except Exception as err:
+            logging.exception('iMacro execution error')
             gcmd.respond_raw(indent(''.join(traceback.format_exception_only(err)), '!! '))
             if isinstance(err, IndentationError) and not self.use_file:
                 gcmd.respond_info(f'<span style="color:yellow;">If you are experiencing syntax errors related to indentation, it is recommended to switch to file-based iMacros.</span>')
