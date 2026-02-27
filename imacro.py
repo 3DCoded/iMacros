@@ -17,11 +17,14 @@ class GCodeCommandInline:
     def __getattr__(self, name):
         def wrapper(*args, **kwargs):
             # Convert G1('E50', F=900) -> "G1 E50 F900"
-            params = " ".join(list(args) + [f"{k}{v}" for k, v in kwargs.items()])
+            params = " ".join(list(args) + [(f"{k}{v}" if len(k) == 1 else f"{k}={v}") for k, v in kwargs.items()])
             full_cmd = f"{name} {params}".strip()
             self._gcode.run_script_from_command(full_cmd)
             
         return wrapper
+
+    def __call__(self, cmd):
+        self._gcode.run_script_from_command(cmd)
 
 class GCodeCommandWrapper:
     def __init__(self, gcmd):
