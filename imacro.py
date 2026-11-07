@@ -4,11 +4,12 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
-import traceback
 import logging
+import traceback
 from html import escape
 from pathlib import Path
 from textwrap import indent
+
 
 class GCodeCommandInline:
     def __init__(self, gcode):
@@ -38,6 +39,9 @@ class PrinterWrapper:
         self._printer = printer
     
     def __getattr__(self, name):
+        return PrinterObjectWrapper(self._printer.lookup_object(name, None))
+
+    def __getitem__(self, name):
         return PrinterObjectWrapper(self._printer.lookup_object(name, None))
 
 class PrinterObjectWrapper:
@@ -94,7 +98,7 @@ class iMacro:
             
             # Add filename for tracebacks
             compiled = compile(script, self.relative_path if self.use_file else f'iMacro {self.name}', 'exec')
-            exec(
+            exec(  # noqa: S102
                 compiled,
                 {
                     'printer': PrinterWrapper(self.printer),
@@ -105,10 +109,10 @@ class iMacro:
                 }
             )
         except Exception as err:
-            logging.exception('iMacro execution error')
+            logging.exception('iMacro execution error')  # noqa: LOG015
             gcmd.respond_raw(indent(''.join(traceback.format_exception_only(err)), '!! '))
             if isinstance(err, IndentationError) and not self.use_file:
-                gcmd.respond_info(f'<span style="color:yellow;">If you are experiencing syntax errors related to indentation, it is recommended to switch to file-based iMacros.</span>')
+                gcmd.respond_info('<span style="color:yellow;">If you are experiencing syntax errors related to indentation, it is recommended to switch to file-based iMacros.</span>')
 
 def load_config_prefix(config):
     return iMacro(config)
