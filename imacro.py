@@ -96,6 +96,14 @@ class iMacro:
             else:
                 script = self.script
             
+            def respond_cmd(msg, type=None, unsafe=False):
+                msg = str(msg)
+                if not unsafe:
+                    msg = escape(msg)
+                if type == 'error':
+                    msg = '!! ' + msg
+                gcmd.respond_info(msg)
+            
             # Add filename for tracebacks
             compiled = compile(script, self.relative_path if self.use_file else f'iMacro {self.name}', 'exec')
             exec(  # noqa: S102
@@ -105,7 +113,7 @@ class iMacro:
                     'params': GCodeCommandWrapper(gcmd),
                     'rawparams': gcmd.get_raw_command_parameters(),
                     'cmd': GCodeCommandInline(self.gcode),
-                    'respond': lambda msg, unsafe=False: gcmd.respond_info(str(msg)) if unsafe else gcmd.respond_info(escape(str(msg))),
+                    'respond': respond_cmd,
                 }
             )
         except Exception as err:
