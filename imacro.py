@@ -17,8 +17,9 @@ class GCodeCommandInline:
         
     def __getattr__(self, name):
         def wrapper(*args, **kwargs):
+            traditional = self._gcode.is_traditional_gcode(name)
             # Convert G1('E50', F=900) -> "G1 E50 F900"
-            params = " ".join(list(args) + [(f"{k}{v}" if len(k) == 1 else f"{k}={v}") for k, v in kwargs.items()])
+            params = " ".join(list(args) + [(f"{k}{v}" if traditional else f"{k}={v}") for k, v in kwargs.items()])
             full_cmd = f"{name} {params}".strip()
             self._gcode.run_script_from_command(full_cmd)
             
@@ -79,6 +80,8 @@ class iMacro:
         else:
             self.use_file = False
         
+        self.fn_name = config.get('fn', None)
+        
         self.desc = config.get('description', default='iMacro')
         
         self.gcode = self.printer.lookup_object('gcode')
@@ -106,16 +109,24 @@ class iMacro:
             
             # Add filename for tracebacks
             compiled = compile(script, self.relative_path if self.use_file else f'iMacro {self.name}', 'exec')
+            namespace = {
+                'printer': PrinterWrapper(self.printer),
+                'params': GCodeCommandWrapper(gcmd),
+                'rawparams': gcmd.get_raw_command_parameters(),
+                'cmd': GCodeCommandInline(self.gcode),
+                'respond': respond_cmd,
+            }
             exec(  # noqa: S102
                 compiled,
-                {
-                    'printer': PrinterWrapper(self.printer),
-                    'params': GCodeCommandWrapper(gcmd),
-                    'rawparams': gcmd.get_raw_command_parameters(),
-                    'cmd': GCodeCommandInline(self.gcode),
-                    'respond': respond_cmd,
-                }
+                namespace
             )
+            if self.fn_name:
+                if self.fn_name not in namespace:
+                    raise ValueError(f"Function '{self.fn_name}' not found in iMacro '{self.name}'")
+                fn = namespace[self.fn_name]
+                if not callable(fn):
+                    raise ValueError(f"'{self.fn_name}' is not callable in iMacro '{self.name}'")
+                fn()
         except Exception as err:
             logging.exception('iMacro execution error')  # noqa: LOG015
             gcmd.respond_raw(indent(''.join(traceback.format_exception_only(err)), '!! '))

@@ -4,7 +4,7 @@ Flexible Interpreted Macros
 
 ### Why?
 
-This project was created as an experiment. What could happen if Klipper macros were fully interpreted, not rendered? This is _not_ intended as a finished product for your printer (at least not yet). The thinking behind interpreted macros is that they can receive updates mid-run, do more complex logic, and allow for faster testing of macros or parts of Klippy extras.
+This project was created as an experiment. What could happen if Klipper macros were fully interpreted, not rendered? The thinking behind interpreted macros is that they can receive updates mid-run, do more complex logic, and allow for faster testing of macros or parts of Klippy extras.
 
 More info on macro [rendering](https://dynamicmacros.3dcoded.xyz/features/rendering/) and [variable updates](https://dynamicmacros.3dcoded.xyz/features/receivingvariables/)
 
@@ -35,8 +35,11 @@ iMacros can be defined with the following configuration options:
 #  Ignored if "script" is set. If this is set to True, the path will
 #  reference an absolute path. If set to false, the path will be
 #  relative to the printer configuration folder.
+#fn:
+#  The function name to run in the script. Defaults to blank (run whole code)
+#  If set, running the iMacro will run the whole code then call fn()
 #description: iMacro
-#  This will add a short description used at the HTLP command or while
+#  This will add a short description used at the HELP command or while
 #  using the auto completion feature. Default "iMacro"
 ```
 
