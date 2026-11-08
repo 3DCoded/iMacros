@@ -103,9 +103,10 @@ class iMacro:
                 msg = str(msg)
                 if not unsafe:
                     msg = escape(msg)
+                    gcmd.respond_info(msg)
                 if type == 'error':
                     msg = '!! ' + msg
-                gcmd.respond_info(msg)
+                    gcmd.respond_raw(msg)
             
             # Add filename for tracebacks
             compiled = compile(script, self.relative_path if self.use_file else f'iMacro {self.name}', 'exec')
