@@ -54,6 +54,8 @@ class PrinterObjectWrapper:
             res = self._obj.get(name, None)
         elif hasattr(self._obj, 'get_status'):
             res = self._obj.get_status(0).get(name, None)
+        else:
+            res = getattr(self._obj, name, None)
         return PrinterObjectWrapper(res) if isinstance(res, dict) else res
     
     def __str__(self):
